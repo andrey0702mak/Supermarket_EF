@@ -15,6 +15,6 @@ namespace Supermarket_EF.Supermarket
         [ForeignKey("Ticket_Id")]
         public Ticket Ticket { get; set; }
         [ForeignKey("SpecificProduct_Id")]
-        public SpacificProduct SpacificProduct { get; set; }
+        public SpecificProduct SpecificProduct { get; set; }
     }
 }

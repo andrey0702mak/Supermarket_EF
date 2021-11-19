@@ -13,7 +13,7 @@ namespace Supermarket_EF
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Sales> Sales { get; set; }
-        public DbSet<SpacificProduct> SpacificProducts { get; set; }
+        public DbSet<SpecificProduct> SpacificProducts { get; set; }
         public DbSet<Ticket> Tickets { get; set; }
 
         public ApplicationContext()
@@ -23,7 +23,7 @@ namespace Supermarket_EF
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Supermarketdb;Trusted_Connection=True;");
+            optionsBuilder.UseSqlServer("Server=DESKTOP-IV4H1DL;Database=Supermarketdb;Trusted_Connection=True;");
         }
     }
 }

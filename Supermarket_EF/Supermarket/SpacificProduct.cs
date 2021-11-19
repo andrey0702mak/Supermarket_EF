@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Supermarket_EF.Supermarket
 {
-    public class SpacificProduct
+    public class SpecificProduct
     {
         [Key]
         public int Id { get; set; }
