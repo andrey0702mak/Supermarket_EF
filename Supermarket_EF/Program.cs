@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using Supermarket_EF.Supermarket;
+using System.Collections.Generic;
 
 namespace Supermarket_EF
 {
@@ -10,8 +11,9 @@ namespace Supermarket_EF
     {
         static void Main(string[] args)
         {
-            //TestValuesAdd();
-            TestMethods();
+            TestValuesAdd();
+            MVPOfTheDay(DateTime.Parse("2021/11/22"));
+            //MVPBeetwenDates(DateTime.Parse("2021/11/22"), DateTime.Parse("2021/11/26"));
         }
         public static void TestValuesAdd()
         {
@@ -94,7 +96,7 @@ namespace Supermarket_EF
                 Console.WriteLine("Adding Product product_iphone11_64...");
                 Product product_iphone11_64 = new Product
                 {
-                    Name = "iPhone 12 64 GB",
+                    Name = "iPhone 11 64 GB",
                     Price = 17499,
                     Brand = "Apple",
                     Category = smartphones,
@@ -129,11 +131,11 @@ namespace Supermarket_EF
                 Console.WriteLine("Adding SpecificProduct specificProduct2...");
                 Console.WriteLine("Adding SpecificProduct specificProduct3...");
                 Console.WriteLine("Adding SpecificProduct specificProduct4...");
-                SpecificProduct specificProduct1 = new SpecificProduct { Product = product_iphone11, Quantity = 10 };
-                SpecificProduct specificProduct2 = new SpecificProduct { Product = product_iphone11_64, Quantity = 10 };
-                SpecificProduct specificProduct3 = new SpecificProduct { Product = product_iphone12, Quantity = 10 };
-                SpecificProduct specificProduct4 = new SpecificProduct { Product = product_macbook_pro_13, Quantity = 10 };
-                db.SpacificProducts.AddRange(specificProduct1, specificProduct2, specificProduct3, specificProduct4);
+                SpecificProduct specifi_product_iphone11 = new SpecificProduct { Product = product_iphone11, Quantity = 10 };
+                SpecificProduct specific_product_iphone11_64 = new SpecificProduct { Product = product_iphone11_64, Quantity = 10 };
+                SpecificProduct specific_product_iphone12 = new SpecificProduct { Product = product_iphone12, Quantity = 10 };
+                SpecificProduct specific_product_macbook_pro_13 = new SpecificProduct { Product = product_macbook_pro_13, Quantity = 10 };
+                db.SpacificProducts.AddRange(specifi_product_iphone11, specific_product_iphone11_64, specific_product_iphone12, specific_product_macbook_pro_13);
 
                 Console.WriteLine("Adding Payment payment1...");
                 Payment payment1 = new Payment() { Brand = "Visa", Type = "Card" };
@@ -154,16 +156,85 @@ namespace Supermarket_EF
                 };
                 db.Customers.Add(customer);
 
-                Console.WriteLine("Adding Ticket ticket1...");
-                Ticket ticket1 = new Ticket() { Customer = customer, Employee = employeeInokentiy, Location = location1, Payment = payment1};
+                Console.WriteLine("\n\n\nAdding Ticket ticket1...");
+                Ticket ticket1 = new Ticket() { Customer = customer, Employee = employeeInokentiy, Location = location1, Payment = payment1, Date = DateTime.Parse("2021/11/23") };
                 db.Tickets.Add(ticket1);
 
-                Console.WriteLine("Adding Sales sales1...");
-                Sales sales1 = new Sales() { Ticket = ticket1, SpecificProduct = specificProduct1, Quantity = 10 };
+                Console.WriteLine("\nAdding Sales SpecificProduct = specifi_product_iphone11, Quantity = 10 Date 2021/11/23...");
+                Sales sales1 = new Sales() { Ticket = ticket1, SpecificProduct = specifi_product_iphone11, Quantity = 10 };
                 db.Sales.Add(sales1);
 
+                Console.WriteLine("Adding Ticket ticket2...");
+                Ticket ticket2 = new Ticket() { Customer = customer, Employee = employeeInokentiy, Location = location1, Payment = payment1, Date = DateTime.Parse("2021/11/22") };
+                db.Tickets.Add(ticket2);
+
+                Console.WriteLine("\nAdding Sales SpecificProduct = specific_product_iphone11_64, Quantity = 20 Date 2021/11/22...");
+                Sales sales2 = new Sales() { Ticket = ticket2, SpecificProduct = specific_product_iphone11_64, Quantity = 40 };
+                db.Sales.Add(sales2);
+
+                Console.WriteLine("Adding Ticket ticket3...");
+                Ticket ticket3 = new Ticket() { Customer = customer, Employee = employeeInokentiy, Location = location1, Payment = payment1, Date = DateTime.Parse("2021/11/22") };
+                db.Tickets.Add(ticket3);
+
+                Console.WriteLine("\nAdding Sales SpecificProduct = specific_product_iphone12, Quantity = 30 Date 2021/11/22...");
+                Sales sales3 = new Sales() { Ticket = ticket3, SpecificProduct = specific_product_iphone12, Quantity = 30 };
+                db.Sales.Add(sales3);
+
+                Console.WriteLine("Adding Ticket ticket4...");
+                Ticket ticket4 = new Ticket() { Customer = customer, Employee = employeeInokentiy, Location = location1, Payment = payment1, Date = DateTime.Parse("2021/11/22") };
+                db.Tickets.Add(ticket4);
+
+                Console.WriteLine("\nAdding Sales SpecificProduct = specific_product_iphone11_64, Quantity = 10 Date 2021/11/22...");
+                Sales sales4 = new Sales() { Ticket = ticket4, SpecificProduct = specific_product_iphone11_64, Quantity = 10 };
+                db.Sales.Add(sales4);
 
                 db.SaveChanges();
+            }
+        }
+        // Написати товар якій продавався найкраще за кожен день
+        public static void MVPBeetwenDates(DateTime from, DateTime thru)
+        {
+            for (var day = from.Date; day.Date <= thru.Date; day = day.AddDays(1))
+                MVPOfTheDay(day);
+        }
+        //public static void MVPOfTheDay(DateTime date)
+        //{
+        //    using (ApplicationContext db = new ApplicationContext())
+        //    {
+        //        var query = (from sp in db.SpacificProducts.Include(s => s.Product)
+        //                     let totalQuantity = (from s in db.Sales
+        //                                          join t in db.Tickets on s.Ticket_Id equals t.Id
+        //                                          where s.SpecificProduct_Id == sp.Id && t.Date == date
+        //                                          select s.Quantity).Sum()
+        //                     where totalQuantity > 0
+        //                     orderby totalQuantity descending
+        //                     select sp).First();
+        //        if (query != null)
+        //            Console.WriteLine($"Найбiльш продаваємим товаром {date.ToShortDateString()} є {query.Product.Name}");
+        //    }
+        //}
+        public static void MVPOfTheDay(DateTime date)
+        {
+            using (ApplicationContext db = new ApplicationContext())
+            {
+                var query = (from sp in db.SpacificProducts.Include(s => s.Product)
+                             let totalQuantity = (from s in db.Sales
+                                                  join t in db.Tickets on s.Ticket_Id equals t.Id
+                                                  where s.SpecificProduct_Id == sp.Id && t.Date == date
+                                                  select s.Quantity).Sum()
+                             where totalQuantity > 0
+                             orderby totalQuantity descending
+                             select sp);
+
+                var max = query.Max(p => p.Quantity);
+
+                var query2 = query.Where(p => p.Quantity == max);
+
+                foreach (var q in query2)
+                {
+                    Console.WriteLine($"Найбiльш продаваємим товаром {date.ToShortDateString()} є {q.Product.Name}");
+                }
+
             }
         }
         public static void TestMethods()
