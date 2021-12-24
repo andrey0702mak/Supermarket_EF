@@ -2,18 +2,153 @@
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
-using Supermarket_EF.Supermarket;
 using System.Collections.Generic;
+using Supermarket_EF.Supermarket;
+using System.Threading;
 
 namespace Supermarket_EF
 {
     class Program
     {
+        static int ITERATIONS = 500;
+        static CountdownEvent done = new CountdownEvent(ITERATIONS);
+        static DateTime startTime = DateTime.Now;
+        static TimeSpan totalLatency = TimeSpan.FromSeconds(0);
+        static int x = 0;
+        static object locker = new object();
+        static TimeSpan summ = TimeSpan.FromSeconds(0);
         static void Main(string[] args)
         {
-            TestValuesAdd();
-            MVPOfTheDay(DateTime.Parse("2021/11/22"));
-            //MVPBeetwenDates(DateTime.Parse("2021/11/22"), DateTime.Parse("2021/11/26"));
+            using (ApplicationContext db = new ApplicationContext())
+            {
+                db.Database.EnsureDeleted();
+                db.Database.EnsureCreated();
+            }
+            Console.WriteLine("\n Task Test");
+            TestTask();
+         //   TestThread();
+            Thread.Sleep(2000);
+            TimeSpan taskSumm = summ;
+
+            Console.WriteLine("\n Thread Test");
+            TestThread();
+        //    TestTask();
+            Thread.Sleep(2000);
+            Console.WriteLine($"\n Сумарний час виконання TestThread Locker: {summ}");
+            Console.WriteLine($"\n Сумарний час виконання TestTask AddValues: {taskSumm}");
+        }
+        public static void TestTask()
+        {
+            AddValues();
+            Thread.Sleep(1000);
+        }
+        public static async void AddValues()
+        {
+            await Task.Run(() => Locker());
+        }
+        public static void TestThread()
+        {
+
+            Thread Generate = new Thread(Locker);
+
+            summ = TimeSpan.Zero;
+            Console.WriteLine($"Обнуляем {summ}");
+            Generate.Start();
+
+            Thread.Sleep(2000);
+
+            Console.WriteLine("\n");
+            Thread readEmployees = new Thread(ReadEmployees);
+            readEmployees.Start();
+
+            Thread.Sleep(500);
+            Console.WriteLine("\n");
+            Thread readCategory = new Thread(ReadCategory);
+            readCategory.Start();
+
+        }
+        public static async void ReadCategory()
+        {
+            using (ApplicationContext db = new ApplicationContext())
+            {
+                List<Category> category = await db.Categories.ToListAsync();
+                Console.WriteLine("Category");
+                foreach (Category c in category)
+                {
+                    Console.WriteLine($"{c.Id} {c.Name} {c.Name}");
+                }
+            }
+        }
+
+        public static async void ReadEmployees()
+        {
+            using (ApplicationContext db = new ApplicationContext())
+            {
+                List<Employee> employees = await db.Employees.ToListAsync();
+
+                Console.WriteLine("Employees");
+                foreach (Employee emp in employees)
+                {
+                    Console.WriteLine($"{emp.Id}. {emp.Name} {emp.Soname}");
+                }
+            }
+        }
+        public static void Locker()
+        {
+            lock (locker)
+            {
+                Thread.Sleep(100);
+                x = 1;
+                for (int i = 1; i < 9; i++)
+                {
+                    var queueTime = DateTime.Now;
+                    ThreadPool.QueueUserWorkItem((o) => {
+                        OnTaskStart(i, queueTime);
+                        Thread.Sleep(100);
+                        OnTaskEnd(i, queueTime);
+                    });
+                    x++;
+                    Thread.Sleep(200);
+                }
+            }
+        }
+        static void Log(int id, DateTime queueTime, string action)
+        {
+            var now = DateTime.Now;
+            var timestamp = now - startTime;
+            var latency = now - queueTime;
+
+            summ += latency;
+            Console.WriteLine(latency);
+        }
+        static void OnTaskStart(int id, DateTime queueTime)
+        {
+            var latency = DateTime.Now - queueTime;
+            lock (done) totalLatency += latency;
+            TestValuesGenerator(x);
+        }
+        static void OnTaskEnd(int id, DateTime queueTime)
+        {
+            Log(id, queueTime, "Finished");
+            done.Signal();
+        }
+        public static void TestValuesGenerator(int x)
+        {
+            using (ApplicationContext db = new ApplicationContext())
+            {
+                string nameEmployee = "Iмя" + x;
+                string surname = "Прiзвище" + x;
+                Employee employee = new Employee { Name = nameEmployee, Soname = surname };
+
+                string nameCategory = "Назва" + x;
+                string title = "Опис" + x;
+                Category category = new Category { Name = nameCategory, Title = title };
+
+                db.AddAsync(employee);
+                db.AddAsync(category);
+
+                db.SaveChanges();
+            }
         }
         public static void TestValuesAdd()
         {
@@ -197,22 +332,6 @@ namespace Supermarket_EF
             for (var day = from.Date; day.Date <= thru.Date; day = day.AddDays(1))
                 MVPOfTheDay(day);
         }
-        //public static void MVPOfTheDay(DateTime date)
-        //{
-        //    using (ApplicationContext db = new ApplicationContext())
-        //    {
-        //        var query = (from sp in db.SpacificProducts.Include(s => s.Product)
-        //                     let totalQuantity = (from s in db.Sales
-        //                                          join t in db.Tickets on s.Ticket_Id equals t.Id
-        //                                          where s.SpecificProduct_Id == sp.Id && t.Date == date
-        //                                          select s.Quantity).Sum()
-        //                     where totalQuantity > 0
-        //                     orderby totalQuantity descending
-        //                     select sp).First();
-        //        if (query != null)
-        //            Console.WriteLine($"Найбiльш продаваємим товаром {date.ToShortDateString()} є {query.Product.Name}");
-        //    }
-        //}
         public static void MVPOfTheDay(DateTime date)
         {
             using (ApplicationContext db = new ApplicationContext())
@@ -378,7 +497,6 @@ namespace Supermarket_EF
             }
 
         }
-
         public static void Test()
         {
             using (ApplicationContext db = new ApplicationContext())
